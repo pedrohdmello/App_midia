@@ -12,7 +12,7 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(false);  // Indicador de carregamento
 
   // Função para buscar a playlist do servidor de arquivos
-  const handleServerRequest = async (playlistId, userId) => {
+  const handleServerRequest = async (playlist, user) => {
     try {
       setIsLoading(true);
       setStatus('Baixando playlist...');
@@ -24,8 +24,8 @@ export default function App() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          user: userId, 
-          playlist: playlistId,
+          user: user, 
+          playlist: playlist,
         }),
       });
 

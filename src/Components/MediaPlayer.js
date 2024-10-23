@@ -67,7 +67,7 @@ const MediaPlayer = ({ playlist }) => {
 const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#000' },
   image: { width: '100%', height: 200, resizeMode: 'contain' },
-  video: { width: '100%', height: width * 0.56 },
+  video: { width: '100%', height: 300 },
   text: { fontSize: 18, color: '#fff', textAlign: 'center', padding: 10 },
   htmlContainer: { padding: 10, width: '100%' },
 });
