@@ -4,7 +4,16 @@ import * as FileSystem from 'expo-file-system';
 // Função para salvar a playlist na memória local
 export const savePlaylist = async (playlist) => {
   try {
-    await AsyncStorage.setItem('currentPlaylist', JSON.stringify(playlist)); // Usando o mesmo nome de chave
+    // Verificar se algum item precisa de ajuste de Base64
+    const processedPlaylist = playlist.map((item) => {
+      if (item.type === 'image' && item.content && !item.content.startsWith('data:image')) {
+        // Se necessário, converte bytes em string Base64 antes de salvar
+        item.content = `data:image/png;base64,${item.content}`;
+      }
+      return item;
+    });
+
+    await AsyncStorage.setItem('currentPlaylist', JSON.stringify(processedPlaylist));
     console.log('Playlist salva na memória.');
   } catch (error) {
     console.error('Erro ao salvar a playlist:', error);
@@ -54,4 +63,33 @@ export const deleteMediaFile = async (fileName) => {
   } catch (error) {
     console.error('Erro ao deletar o arquivo:', error);
   }
+};
+
+// Função para carregar mídia local
+export const loadLocalMedia = async () => {
+  try {
+    const playlist = await loadPlaylist();
+    if (playlist) {
+      console.log('Playlist carregada:', playlist);
+      return playlist;
+    } else {
+      console.log('Nenhuma playlist encontrada.');
+      return null;
+    }
+  } catch (error) {
+    console.error('Erro ao carregar mídia local:', error);
+    throw error;
+  }
+};
+
+// Função para iniciar o player (pode ser expandida para mais funcionalidades)
+export const startPlayer = () => {
+  // Aqui você pode colocar a lógica para iniciar o player
+  console.log('Player iniciado');
+};
+
+// Função para verificar o status da requisição
+export const checkStatus = async () => {
+  // Aqui você pode adicionar a lógica de verificação de status da comunicação
+  return 'Aguardando requisições...'; // ou retornar algum erro, caso haja falha na comunicação
 };

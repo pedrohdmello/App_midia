@@ -3,36 +3,69 @@ import { View, Text, Image, ScrollView, StyleSheet } from 'react-native';
 import Video from 'react-native-video';
 import RenderHTML from 'react-native-render-html';
 import { useWindowDimensions } from 'react-native';
+import * as FileSystem from 'expo-file-system';
 
-// Componente que gerencia a reprodução de diferentes tipos de mídia
+// Função para verificar e converter conteúdo para Base64 automaticamente
+const convertToBase64 = (content) => {
+  // Verifica se o conteúdo é uma string de bytes que precisa de conversão para Base64
+  if (typeof content === 'string' && !content.startsWith('data:image')) {
+    return `data:image/png;base64,${content}`;
+  }
+  return content;
+};
+
 const MediaPlayer = ({ playlist }) => {
-  const [currentMedia, setCurrentMedia] = useState(null); // Mídia atual sendo exibida
-  const [currentIndex, setCurrentIndex] = useState(0);    // Índice da mídia atual na playlist
-  const { width } = useWindowDimensions(); // Pega a largura da tela para renderizar HTML
+  const [currentMedia, setCurrentMedia] = useState(null);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [localImageUri, setLocalImageUri] = useState(null);
+  const { width } = useWindowDimensions();
 
-  // Atualiza a mídia atual quando a playlist ou o índice mudar
   useEffect(() => {
     if (playlist && playlist.length > 0) {
       setCurrentMedia(playlist[currentIndex]);
+      console.log('Current Media:', playlist[currentIndex]);
     }
   }, [playlist, currentIndex]);
 
-  // Função para avançar para a próxima mídia
   const handleNextMedia = () => {
     if (currentIndex < playlist.length - 1) {
-      setCurrentIndex(currentIndex + 1); // Avança para o próximo
+      setCurrentIndex(currentIndex + 1);
     } else {
-      setCurrentIndex(0); // Volta ao início se chegar ao fim da playlist
+      setCurrentIndex(0);
     }
   };
 
-  // Renderiza a mídia com base no tipo
+  const decodeAndStoreImage = async (base64String) => {
+    try {
+      const fileUri = FileSystem.documentDirectory + 'image.png';
+      await FileSystem.writeAsStringAsync(fileUri, base64String, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+      setLocalImageUri(fileUri);
+      console.log("Imagem salva no URI:", fileUri);
+    } catch (error) {
+      console.error("Erro ao salvar a imagem localmente", error);
+    }
+  };
+
+  useEffect(() => {
+    if (currentMedia?.type === 'image' && currentMedia.content) {
+      const base64Data = convertToBase64(currentMedia.content).split(',')[1];
+      decodeAndStoreImage(base64Data);
+    }
+  }, [currentMedia]);
+
   const renderMedia = (media) => {
     if (!media) return <Text>Nenhuma mídia para reproduzir</Text>;
+    console.log("Estado atual de localImageUri:", localImageUri);
 
     switch (media.type) {
       case 'image':
-        return <Image source={{ uri: media.url }} style={styles.image} />;
+        return localImageUri ? (
+          <Image source={{ uri: localImageUri }} style={styles.image} />
+        ) : (
+          <Text>Carregando imagem...</Text>
+        );
       case 'video':
         return (
           <Video
@@ -40,7 +73,7 @@ const MediaPlayer = ({ playlist }) => {
             style={styles.video}
             controls={true}
             resizeMode="contain"
-            onEnd={handleNextMedia} // Avança para a próxima mídia quando o vídeo terminar
+            onEnd={handleNextMedia}
           />
         );
       case 'text':
@@ -56,7 +89,6 @@ const MediaPlayer = ({ playlist }) => {
     }
   };
 
-  // Exibe o conteúdo da mídia atual
   return (
     <View style={styles.container}>
       {currentMedia ? renderMedia(currentMedia) : <Text>Nenhuma mídia disponível</Text>}
@@ -65,9 +97,8 @@ const MediaPlayer = ({ playlist }) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#000' },
-  image: { width: '100%', height: 200, resizeMode: 'contain' },
-  video: { width: '100%', height: 300 },
+  image: { width: '100%', height: undefined, aspectRatio: 1, resizeMode: 'contain' },
+  video: { width: '100%', height: '100%' },
   text: { fontSize: 18, color: '#fff', textAlign: 'center', padding: 10 },
   htmlContainer: { padding: 10, width: '100%' },
 });
